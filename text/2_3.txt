@@ -1,0 +1,3 @@
+Analysis generally occurs in one pass. 
+Lexers and parsers are most often used for compilers, 
+but can be used for other computer language tools, such as prettyprinters or linters.
