@@ -3,4 +3,4 @@
 ## Building
 
 1. Have rust toolchain installed via `rustup`  
-2. Use `cargo build --release` in the terminal
+2. Use `cargo run --release > out.txt` in the terminal

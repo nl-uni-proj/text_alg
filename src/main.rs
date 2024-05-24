@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-mod ansi;
 mod lexer;
 
 const THEME_COUNT: usize = 3;
@@ -15,7 +14,14 @@ const THEME_TEXT_MATRIX: TextThemeMatrix = [
 ];
 
 type TextThemeMatrix = [[u8; TEXT_COUNT]; THEME_COUNT];
-struct WordTextMatrix(Vec<(String, [u8; TEXT_COUNT])>);
+
+struct WordTextMatrix {
+    entries: Vec<(String, [u8; TEXT_COUNT])>,
+}
+
+struct WordWordMatrix {
+    entries: HashMap<(String, String), u32>,
+}
 
 struct TextData {
     theme_idx: usize,
@@ -61,9 +67,11 @@ fn main() {
     let text_data = lex_texts();
     let vocab = create_vocab(&text_data);
     let word_text_matrix = create_word_text_matrix(&vocab, &text_data);
+    let word_word_matrix = create_word_word_matrix(&text_data);
 
     pretty_print_text_theme_matrix();
     pretty_print_word_text_matrix(&word_text_matrix);
+    pretty_print_word_word_matrix(&word_word_matrix);
     println!("");
 }
 
@@ -75,9 +83,10 @@ fn lex_texts() -> Vec<TextData> {
         let theme_idx = TEXT_THEME_IDX[text_idx];
         let filename = format!("text/{}_{}.txt", theme_idx + 1, text_idx + 1);
         let filepath = cwd.join(filename);
+        let source = std::fs::read_to_string(filepath).expect("file read failed");
 
-        let words = lexer::lex(filepath, false);
-        pretty_print_words(theme_idx, text_idx, &words);
+        let words = lexer::lex(&source, false);
+        pretty_print_words(theme_idx, text_idx, &source, &words);
         text_data.push(TextData::new(theme_idx, words));
     }
     text_data
@@ -108,16 +117,34 @@ fn create_word_text_matrix(vocab: &Vocab, text_data: &[TextData]) -> WordTextMat
         entries.push((unique.clone(), text_word_counts));
     }
 
-    WordTextMatrix(entries)
+    WordTextMatrix { entries }
 }
 
-fn pretty_print_words(theme_idx: usize, text_idx: usize, words: &[String]) {
-    let g = ansi::GREEN_BOLD;
-    let r = ansi::RESET;
-    println!(
-        "\n{g}GROUP: `{}`, TEXT: `{text_idx}`{r}",
-        THEME_NAMES[theme_idx]
-    );
+fn create_word_word_matrix(text_data: &[TextData]) -> WordWordMatrix {
+    let mut entries = HashMap::new();
+
+    for data in text_data {
+        let words = &data.word_list;
+        for i in 0..words.len() - 1 {
+            let word_1 = &words[i];
+            let word_2 = &words[i + 1];
+            *entries.entry((word_1.clone(), word_2.clone())).or_insert(0) += 1;
+        }
+    }
+
+    WordWordMatrix { entries }
+}
+
+fn print_separator() {
+    println!("\n---------------------------------------------------");
+}
+
+fn pretty_print_words(theme_idx: usize, text_idx: usize, source: &str, words: &[String]) {
+    print_separator();
+    println!("GROUP: `{}`, TEXT: `{text_idx}`", THEME_NAMES[theme_idx]);
+    println!("\nORIGINAL TEXT:");
+    println!("{source}\n");
+    println!("PROCESSED TEXT:");
 
     const PRINT_WIDTH: usize = 60;
     let mut width = 0;
@@ -143,9 +170,8 @@ fn print_text_index_row() {
 }
 
 fn pretty_print_text_theme_matrix() {
-    let g = ansi::GREEN_BOLD;
-    let r = ansi::RESET;
-    println!("\n{g}THEME x TEXT MATRIX:{r}");
+    print_separator();
+    println!("THEME x TEXT MATRIX:");
     print_text_index_row();
 
     for theme_idx in 0..THEME_COUNT {
@@ -155,12 +181,20 @@ fn pretty_print_text_theme_matrix() {
 }
 
 fn pretty_print_word_text_matrix(matrix: &WordTextMatrix) {
-    let g = ansi::GREEN_BOLD;
-    let r = ansi::RESET;
-    println!("\n{g}WORD x TEXT MATRIX:{r}");
+    print_separator();
+    println!("WORD x TEXT MATRIX:");
     print_text_index_row();
 
-    for (word, counts) in matrix.0.iter() {
+    for (word, counts) in matrix.entries.iter() {
         println!("{:14}{:?}", word, counts);
+    }
+}
+
+fn pretty_print_word_word_matrix(matrix: &WordWordMatrix) {
+    print_separator();
+    println!("WORD x WORD PAIR MATRIX:");
+
+    for ((word_1, word_2), freq) in matrix.entries.iter() {
+        println!("{:14} | {:14} | {:?}", word_1, word_2, *freq);
     }
 }

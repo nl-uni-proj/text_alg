@@ -26,9 +26,8 @@ impl<'src> Lexer<'src> {
     }
 }
 
-pub fn lex(filepath: PathBuf, stem: bool) -> Vec<String> {
-    let source = std::fs::read_to_string(filepath).expect("file read failed");
-    let mut lexer = Lexer::new(&source);
+pub fn lex(source: &str, stem: bool) -> Vec<String> {
+    let mut lexer = Lexer::new(source);
 
     while lexer.peek().is_some() {
         while let Some(c) = lexer.peek() {
