@@ -15,7 +15,7 @@ const THEME_TEXT_MATRIX: TextThemeMatrix = [
 ];
 
 type TextThemeMatrix = [[u8; TEXT_COUNT]; THEME_COUNT];
-struct WordTextMatrix(Vec<[u8; TEXT_COUNT]>);
+struct WordTextMatrix(Vec<(String, [u8; TEXT_COUNT])>);
 
 struct TextData {
     theme_idx: usize,
@@ -60,7 +60,7 @@ impl Vocab {
 fn main() {
     let text_data = lex_texts();
     let vocab = create_vocab(&text_data);
-    let word_text_matrix = create_word_text_matrix(&vocab);
+    let word_text_matrix = create_word_text_matrix(&vocab, &text_data);
 
     pretty_print_text_theme_matrix();
     pretty_print_word_text_matrix(&word_text_matrix);
@@ -92,10 +92,21 @@ fn create_vocab(text_data: &[TextData]) -> Vocab {
     vocab
 }
 
-fn create_word_text_matrix(vocab: &Vocab) -> WordTextMatrix {
-    let entries = Vec::new();
+fn create_word_text_matrix(vocab: &Vocab, text_data: &[TextData]) -> WordTextMatrix {
+    let mut entries = Vec::new();
 
-    for unique in vocab.unique_ordered.iter() {}
+    for unique in vocab.unique_ordered.iter() {
+        let mut text_word_counts = [0; TEXT_COUNT];
+        for (text_idx, data) in text_data.iter().enumerate() {
+            let count: u8 = data
+                .word_list
+                .iter()
+                .map(|word| if unique == word { 1 } else { 0 })
+                .sum();
+            text_word_counts[text_idx] = count;
+        }
+        entries.push((unique.clone(), text_word_counts));
+    }
 
     WordTextMatrix(entries)
 }
@@ -123,20 +134,23 @@ fn pretty_print_words(theme_idx: usize, text_idx: usize, words: &[String]) {
     }
 }
 
-fn pretty_print_text_theme_matrix() {
-    let g = ansi::GREEN_BOLD;
-    let r = ansi::RESET;
-    println!("\n{g}THEME x TEXT MATRIX:{r}");
-
-    print!("{:12}", "text index");
+fn print_text_index_row() {
+    print!("{:14}", "text index");
     for text_idx in 0..TEXT_COUNT {
         print!("{:2} ", text_idx);
     }
     print!("\n");
+}
+
+fn pretty_print_text_theme_matrix() {
+    let g = ansi::GREEN_BOLD;
+    let r = ansi::RESET;
+    println!("\n{g}THEME x TEXT MATRIX:{r}");
+    print_text_index_row();
 
     for theme_idx in 0..THEME_COUNT {
         let theme_name = THEME_NAMES[theme_idx];
-        println!("{:12}{:?}", theme_name, THEME_TEXT_MATRIX[theme_idx]);
+        println!("{:14}{:?}", theme_name, THEME_TEXT_MATRIX[theme_idx]);
     }
 }
 
@@ -144,15 +158,9 @@ fn pretty_print_word_text_matrix(matrix: &WordTextMatrix) {
     let g = ansi::GREEN_BOLD;
     let r = ansi::RESET;
     println!("\n{g}WORD x TEXT MATRIX:{r}");
+    print_text_index_row();
 
-    print!("{:12}", "text index");
-    for text_idx in 0..TEXT_COUNT {
-        print!("{:2} ", text_idx);
-    }
-    print!("\n");
-
-    for theme_idx in 0..THEME_COUNT {
-        let theme_name = THEME_NAMES[theme_idx];
-        println!("{:12}{:?}", theme_name, THEME_TEXT_MATRIX[theme_idx]);
+    for (word, counts) in matrix.0.iter() {
+        println!("{:14}{:?}", word, counts);
     }
 }
