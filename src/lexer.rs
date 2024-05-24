@@ -48,7 +48,7 @@ pub fn lex(source: &str, stem: bool) -> Vec<String> {
             }
         }
 
-        if !token.is_empty() {
+        if !token.is_empty() && !is_stop_word(&token) {
             if stem {
                 lexer.tokens.push(porter_stemmer::stem(&token));
             } else {
@@ -58,4 +58,13 @@ pub fn lex(source: &str, stem: bool) -> Vec<String> {
     }
 
     lexer.finish()
+}
+
+const STOP_WORDS: [&'static str; 16] = [
+    "a", "an", "as", "are", "and", "the", "via", "for", "is", "or", "in", "of", "it", "to", "on",
+    "by",
+];
+
+fn is_stop_word(word: &str) -> bool {
+    STOP_WORDS.iter().find(|&&v| v == word).is_some()
 }

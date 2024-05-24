@@ -72,7 +72,6 @@ fn main() {
     pretty_print_text_theme_matrix();
     pretty_print_word_text_matrix(&word_text_matrix);
     pretty_print_word_word_matrix(&word_word_matrix);
-    println!("");
 }
 
 fn lex_texts() -> Vec<TextData> {
@@ -141,7 +140,7 @@ fn print_separator() {
 
 fn pretty_print_words(theme_idx: usize, text_idx: usize, source: &str, words: &[String]) {
     print_separator();
-    println!("GROUP: `{}`, TEXT: `{text_idx}`", THEME_NAMES[theme_idx]);
+    println!("THEME: `{}`, TEXT: `{text_idx}`", THEME_NAMES[theme_idx]);
     println!("\nORIGINAL TEXT:");
     println!("{source}\n");
     println!("PROCESSED TEXT:");
