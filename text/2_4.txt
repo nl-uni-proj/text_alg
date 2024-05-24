@@ -1,4 +1,3 @@
 A lexical token is a string with an assigned and thus identified meaning,
 in contrast to the probabilistic token used in large language models.
 Lexical token consists of a token name and an optional token value.
-The token name is a category of a rule-based lexical unit.

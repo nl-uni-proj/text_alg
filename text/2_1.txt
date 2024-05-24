@@ -1,4 +1,3 @@
-Lexical tokenization is conversion of a text into (semantically or syntactically) 
+Lexical tokenization is conversion of a text into (semantically or syntactically)
 meaningful lexical tokens belonging to categories defined by a "lexer" program. 
-In case of a natural language, those categories include nouns, verbs, adjectives, punctuations etc. 
-In case of a programming language, the categories include identifiers, operators, grouping symbols and data types.
+In case of a natural language, those categories include nouns, verbs, adjectives, punctuations etc.

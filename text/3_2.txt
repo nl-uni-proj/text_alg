@@ -1,4 +1,3 @@
 This hobbit was a very well-to-do hobbit, and his name was Baggins.
-The Bagginses had lived in the neighbourhood of The Hill for time out of mind,
-and people considered them very respectable, not only because most of them were rich,
-but also because they never had any adventures or did anything unexpected.
+The Bagginses had lived in the neighbourhood, and people considered them very respectable, 
+not only because most of them were rich, but also because they never had any adventures or did anything unexpected.
