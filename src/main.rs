@@ -27,7 +27,7 @@ fn analyze_group_theme(theme_idx: usize) {
     for text_idx in 0..THEME_TEXT_COUNTS[theme_idx] {
         let filename = format!("text/{}_{}.txt", theme_idx + 1, text_idx + 1);
         let filepath = cwd.join(filename);
-        let words = lexer::lex_stemmed(filepath);
+        let words = lexer::lex(filepath, false);
 
         pretty_print_words(theme_idx, text_idx, &words);
     }

@@ -26,7 +26,7 @@ impl<'src> Lexer<'src> {
     }
 }
 
-pub fn lex_stemmed(filepath: PathBuf) -> Vec<String> {
+pub fn lex(filepath: PathBuf, stem: bool) -> Vec<String> {
     let source = std::fs::read_to_string(filepath).expect("file read failed");
     let mut lexer = Lexer::new(&source);
 
@@ -50,9 +50,11 @@ pub fn lex_stemmed(filepath: PathBuf) -> Vec<String> {
         }
 
         if !token.is_empty() {
-            let word = porter_stemmer::stem(&token);
-            //let word = token;
-            lexer.tokens.push(word);
+            if stem {
+                lexer.tokens.push(porter_stemmer::stem(&token));
+            } else {
+                lexer.tokens.push(token);
+            }
         }
     }
 
