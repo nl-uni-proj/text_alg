@@ -1,3 +1,3 @@
-We can define functions to have parameters, 
-which are special variables that are part of a functions signature. 
+We can define functions to have parameters,
+which are special variables that are part of a functions signature.
 When a function has parameters, you can provide it with concrete values for those parameters.

@@ -1,4 +1,4 @@
-use std::{iter::Peekable, path::PathBuf, str::Chars};
+use std::{iter::Peekable, str::Chars};
 
 struct Lexer<'src> {
     chars: Peekable<Chars<'src>>,
@@ -60,9 +60,11 @@ pub fn lex(source: &str, stem: bool) -> Vec<String> {
     lexer.finish()
 }
 
-const STOP_WORDS: [&'static str; 16] = [
-    "a", "an", "as", "are", "and", "the", "via", "for", "is", "or", "in", "of", "it", "to", "on",
-    "by",
+const STOP_WORDS: [&'static str; 44] = [
+    "a", "an", "as", "at", "we", "are", "and", "the", "via", "for", "is", "or", "in", "of", "it",
+    "its", "to", "on", "by", "this", "be", "but", "thus", "that", "was", "were", "not", "etc",
+    "with", "into", "onto", "can", "have", "also", "which", "you", "has", "do", "did", "done",
+    "had", "his", "them", "they",
 ];
 
 fn is_stop_word(word: &str) -> bool {

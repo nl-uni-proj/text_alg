@@ -26,6 +26,7 @@ struct WordWordMatrix {
 struct TextData {
     theme_idx: usize,
     word_list: Vec<String>,
+    vocab: Vocab,
 }
 
 struct Vocab {
@@ -35,9 +36,11 @@ struct Vocab {
 
 impl TextData {
     fn new(theme_idx: usize, word_list: Vec<String>) -> TextData {
+        let vocab = Vocab::new_from_words(&word_list);
         TextData {
             theme_idx,
             word_list,
+            vocab,
         }
     }
 }
@@ -48,6 +51,20 @@ impl Vocab {
             word_freq_set: HashMap::new(),
             unique_ordered: Vec::new(),
         }
+    }
+
+    fn new_from_words(words: &[String]) -> Vocab {
+        let mut vocab = Vocab::new();
+        vocab.extend(words);
+        vocab
+    }
+
+    fn new_from_text_data(text_data: &[TextData]) -> Vocab {
+        let mut vocab = Vocab::new();
+        for data in text_data {
+            vocab.extend(&data.word_list);
+        }
+        vocab
     }
 
     fn extend(&mut self, words: &[String]) {
@@ -65,13 +82,14 @@ impl Vocab {
 
 fn main() {
     let text_data = lex_texts();
-    let vocab = create_vocab(&text_data);
+    let vocab = Vocab::new_from_text_data(&text_data);
     let word_text_matrix = create_word_text_matrix(&vocab, &text_data);
-    let word_word_matrix = create_word_word_matrix(&text_data);
+    //let word_word_matrix = create_word_word_matrix(&text_data);
 
     pretty_print_text_theme_matrix();
     pretty_print_word_text_matrix(&word_text_matrix);
-    pretty_print_word_word_matrix(&word_word_matrix);
+    //pretty_print_word_word_matrix(&word_word_matrix);
+    pretty_print_word_frequency_table(&vocab, true);
 }
 
 fn lex_texts() -> Vec<TextData> {
@@ -85,19 +103,14 @@ fn lex_texts() -> Vec<TextData> {
         let source = std::fs::read_to_string(filepath).expect("file read failed");
 
         let words = lexer::lex(&source, false);
-        pretty_print_words(theme_idx, text_idx, &source, &words);
-        text_data.push(TextData::new(theme_idx, words));
+        let data = TextData::new(theme_idx, words);
+
+        pretty_print_words(theme_idx, text_idx, &source, &data.word_list);
+        pretty_print_word_frequency_table(&data.vocab, false);
+
+        text_data.push(data);
     }
     text_data
-}
-
-fn create_vocab(text_data: &[TextData]) -> Vocab {
-    let mut vocab = Vocab::new();
-
-    for data in text_data {
-        vocab.extend(&data.word_list);
-    }
-    vocab
 }
 
 fn create_word_text_matrix(vocab: &Vocab, text_data: &[TextData]) -> WordTextMatrix {
@@ -195,5 +208,16 @@ fn pretty_print_word_word_matrix(matrix: &WordWordMatrix) {
 
     for ((word_1, word_2), freq) in matrix.entries.iter() {
         println!("{:14} | {:14} | {:?}", word_1, word_2, *freq);
+    }
+}
+
+fn pretty_print_word_frequency_table(vocab: &Vocab, sep: bool) {
+    if sep {
+        print_separator();
+    }
+    println!("WORD FREQUENCY TABLE:");
+
+    for (word, freq) in vocab.word_freq_set.iter() {
+        println!("{:14} | {}", word, freq);
     }
 }
