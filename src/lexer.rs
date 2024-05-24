@@ -1,4 +1,4 @@
-use std::{iter::Peekable, str::Chars};
+use std::{iter::Peekable, path::PathBuf, str::Chars};
 
 struct Lexer<'src> {
     chars: Peekable<Chars<'src>>,
@@ -26,8 +26,9 @@ impl<'src> Lexer<'src> {
     }
 }
 
-pub fn lex(source: &str) -> Vec<String> {
-    let mut lexer = Lexer::new(source);
+pub fn lex_stemmed(filepath: PathBuf) -> Vec<String> {
+    let source = std::fs::read_to_string(filepath).expect("file read failed");
+    let mut lexer = Lexer::new(&source);
 
     while lexer.peek().is_some() {
         while let Some(c) = lexer.peek() {
@@ -42,13 +43,16 @@ pub fn lex(source: &str) -> Vec<String> {
         while let Some(c) = lexer.peek() {
             if c.is_alphabetic() {
                 lexer.eat();
-                token.push(c);
+                token.push(c.to_ascii_lowercase());
             } else {
                 break;
             }
         }
+
         if !token.is_empty() {
-            lexer.tokens.push(token);
+            let word = porter_stemmer::stem(&token);
+            //let word = token;
+            lexer.tokens.push(word);
         }
     }
 

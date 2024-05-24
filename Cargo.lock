@@ -3,5 +3,23 @@
 version = 3
 
 [[package]]
+name = "porter-stemmer"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b79930494aea54869101ef3fb694fdb53383c0c5bcecc7d729ddad85fe0fa338"
+dependencies = [
+ "unicode-segmentation",
+]
+
+[[package]]
 name = "text_alg"
 version = "0.1.0"
+dependencies = [
+ "porter-stemmer",
+]
+
+[[package]]
+name = "unicode-segmentation"
+version = "1.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d4c87d22b6e3f4a18d4d40ef354e97c90fcb14dd91d7dc0aa9d8a1172ebf7202"
