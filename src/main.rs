@@ -19,28 +19,36 @@ struct WordTextMatrix {
     entries: Vec<(String, [u8; TEXT_COUNT])>,
 }
 
-struct WordWordMatrix {
-    entries: HashMap<(String, String), u32>,
-}
-
 struct TextData {
     theme_idx: usize,
     word_list: Vec<String>,
     vocab: Vocab,
+    unique_tf: Vec<f32>,
 }
 
 struct Vocab {
     word_freq_set: HashMap<String, u32>,
-    unique_ordered: Vec<String>,
+    unique_words: Vec<String>,
 }
 
 impl TextData {
     fn new(theme_idx: usize, word_list: Vec<String>) -> TextData {
         let vocab = Vocab::new_from_words(&word_list);
+        let unique_len = vocab.unique_words.len();
+
+        let mut unique_tf = Vec::with_capacity(unique_len);
+
+        for word in vocab.unique_words.iter() {
+            let freq = vocab.word_freq(&word) as f32;
+            let total = word_list.len() as f32;
+            unique_tf.push(freq / total);
+        }
+
         TextData {
             theme_idx,
             word_list,
             vocab,
+            unique_tf,
         }
     }
 }
@@ -49,7 +57,7 @@ impl Vocab {
     fn new() -> Vocab {
         Vocab {
             word_freq_set: HashMap::new(),
-            unique_ordered: Vec::new(),
+            unique_words: Vec::new(),
         }
     }
 
@@ -67,6 +75,10 @@ impl Vocab {
         vocab
     }
 
+    fn word_freq(&self, string: &str) -> u32 {
+        *self.word_freq_set.get(string).unwrap()
+    }
+
     fn extend(&mut self, words: &[String]) {
         for word in words {
             let new_word = !self.word_freq_set.contains_key(word);
@@ -74,7 +86,7 @@ impl Vocab {
             *entry += 1;
 
             if new_word {
-                self.unique_ordered.push(word.clone());
+                self.unique_words.push(word.clone());
             }
         }
     }
@@ -84,11 +96,11 @@ fn main() {
     let text_data = lex_texts();
     let vocab = Vocab::new_from_text_data(&text_data);
     let word_text_matrix = create_word_text_matrix(&vocab, &text_data);
-    //let word_word_matrix = create_word_word_matrix(&text_data);
+    let idf_scores = create_idf_scores(&vocab, &word_text_matrix);
 
     pretty_print_text_theme_matrix();
     pretty_print_word_text_matrix(&word_text_matrix);
-    //pretty_print_word_word_matrix(&word_word_matrix);
+    pretty_print_idf_scores(&vocab.unique_words, &idf_scores);
     pretty_print_word_frequency_table(&vocab, true);
 }
 
@@ -107,6 +119,7 @@ fn lex_texts() -> Vec<TextData> {
 
         pretty_print_words(theme_idx, text_idx, &source, &data.word_list);
         pretty_print_word_frequency_table(&data.vocab, false);
+        pretty_print_tf_scores(&data.vocab.unique_words, &data.unique_tf);
 
         text_data.push(data);
     }
@@ -116,7 +129,7 @@ fn lex_texts() -> Vec<TextData> {
 fn create_word_text_matrix(vocab: &Vocab, text_data: &[TextData]) -> WordTextMatrix {
     let mut entries = Vec::new();
 
-    for unique in vocab.unique_ordered.iter() {
+    for unique in vocab.unique_words.iter() {
         let mut text_word_counts = [0; TEXT_COUNT];
         for (text_idx, data) in text_data.iter().enumerate() {
             let count: u8 = data
@@ -132,19 +145,19 @@ fn create_word_text_matrix(vocab: &Vocab, text_data: &[TextData]) -> WordTextMat
     WordTextMatrix { entries }
 }
 
-fn create_word_word_matrix(text_data: &[TextData]) -> WordWordMatrix {
-    let mut entries = HashMap::new();
+fn create_idf_scores(vocab: &Vocab, word_text_matrix: &WordTextMatrix) -> Vec<f32> {
+    let mut idf_scores = Vec::with_capacity(vocab.unique_words.len());
 
-    for data in text_data {
-        let words = &data.word_list;
-        for i in 0..words.len() - 1 {
-            let word_1 = &words[i];
-            let word_2 = &words[i + 1];
-            *entries.entry((word_1.clone(), word_2.clone())).or_insert(0) += 1;
-        }
+    for (_, text_freqs) in word_text_matrix.entries.iter() {
+        let text_occurences: u8 = text_freqs
+            .iter()
+            .map(|freq| if *freq != 0 { 1 } else { 0 })
+            .sum();
+        let idf = TEXT_COUNT as f32 / text_occurences as f32;
+        idf_scores.push(idf);
     }
 
-    WordWordMatrix { entries }
+    idf_scores
 }
 
 fn print_separator() {
@@ -202,22 +215,37 @@ fn pretty_print_word_text_matrix(matrix: &WordTextMatrix) {
     }
 }
 
-fn pretty_print_word_word_matrix(matrix: &WordWordMatrix) {
-    print_separator();
-    println!("WORD x WORD PAIR MATRIX:");
-
-    for ((word_1, word_2), freq) in matrix.entries.iter() {
-        println!("{:14} | {:14} | {:?}", word_1, word_2, *freq);
-    }
-}
-
 fn pretty_print_word_frequency_table(vocab: &Vocab, sep: bool) {
     if sep {
         print_separator();
+    } else {
+        println!("");
     }
     println!("WORD FREQUENCY TABLE:");
 
     for (word, freq) in vocab.word_freq_set.iter() {
         println!("{:14} | {}", word, freq);
+    }
+}
+
+fn pretty_print_tf_scores(unique_words: &[String], unique_tf: &[f32]) {
+    println!("");
+    println!("TF SCORE:");
+
+    for i in 0..unique_words.len() {
+        let word = &unique_words[i];
+        let tf = unique_tf[i];
+        println!("{:14} | {}", word, tf);
+    }
+}
+
+fn pretty_print_idf_scores(unique_words: &[String], idf_scores: &[f32]) {
+    print_separator();
+    println!("IDF SCORE:");
+
+    for i in 0..unique_words.len() {
+        let word = &unique_words[i];
+        let idf = idf_scores[i];
+        println!("{:14} | {}", word, idf);
     }
 }
