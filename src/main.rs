@@ -27,6 +27,7 @@ struct TextData {
 }
 
 struct Vocab {
+    total_freq: u32,
     word_freq_set: HashMap<String, u32>,
     unique_words: Vec<String>,
 }
@@ -56,6 +57,7 @@ impl TextData {
 impl Vocab {
     fn new() -> Vocab {
         Vocab {
+            total_freq: 0,
             word_freq_set: HashMap::new(),
             unique_words: Vec::new(),
         }
@@ -79,11 +81,22 @@ impl Vocab {
         *self.word_freq_set.get(string).unwrap()
     }
 
+    fn get_tf_scores(&self) -> Vec<(String, f32)> {
+        let mut unique_tf = Vec::new();
+        for word in self.unique_words.iter() {
+            let freq = self.word_freq(&word) as f32;
+            let total = self.total_freq as f32;
+            unique_tf.push((word.clone(), freq / total));
+        }
+        unique_tf
+    }
+
     fn extend(&mut self, words: &[String]) {
         for word in words {
             let new_word = !self.word_freq_set.contains_key(word);
             let entry = self.word_freq_set.entry(word.clone()).or_insert(0);
             *entry += 1;
+            self.total_freq += 1;
 
             if new_word {
                 self.unique_words.push(word.clone());
@@ -96,12 +109,18 @@ fn main() {
     let text_data = lex_texts();
     let vocab = Vocab::new_from_text_data(&text_data);
     let word_text_matrix = create_word_text_matrix(&vocab, &text_data);
-    let idf_scores = create_idf_scores(&vocab, &word_text_matrix);
 
     pretty_print_text_theme_matrix();
     pretty_print_word_text_matrix(&word_text_matrix);
-    pretty_print_idf_scores(&vocab.unique_words, &idf_scores);
     pretty_print_word_frequency_table(&vocab, true);
+
+    let tf_scores = vocab.get_tf_scores();
+    let idf_scores = create_idf_scores(&vocab, &word_text_matrix);
+    let tf_idf_scores = creat_tf_idf_scores(&tf_scores, &idf_scores);
+
+    pretty_print_tf_scores(&tf_scores, true);
+    pretty_print_idf_scores(&vocab.unique_words, &idf_scores);
+    pretty_print_tf_idf_scores(&tf_idf_scores, true);
 }
 
 fn lex_texts() -> Vec<TextData> {
@@ -119,7 +138,7 @@ fn lex_texts() -> Vec<TextData> {
 
         pretty_print_words(theme_idx, text_idx, &source, &data.word_list);
         pretty_print_word_frequency_table(&data.vocab, false);
-        pretty_print_tf_scores(&data.vocab.unique_words, &data.unique_tf);
+        pretty_print_tf_scores(&data.vocab.get_tf_scores(), false);
 
         text_data.push(data);
     }
@@ -158,6 +177,18 @@ fn create_idf_scores(vocab: &Vocab, word_text_matrix: &WordTextMatrix) -> Vec<f3
     }
 
     idf_scores
+}
+
+fn creat_tf_idf_scores(tf_scores: &[(String, f32)], idf_scores: &[f32]) -> Vec<(String, f32)> {
+    let mut tf_idf = Vec::new();
+
+    for i in 0..tf_scores.len() {
+        let (word, tf) = tf_scores[i];
+        let idf = idf_scores[i];
+        tf_idf.push((word.clone(), tf * idf));
+    }
+
+    tf_idf
 }
 
 fn print_separator() {
@@ -228,13 +259,15 @@ fn pretty_print_word_frequency_table(vocab: &Vocab, sep: bool) {
     }
 }
 
-fn pretty_print_tf_scores(unique_words: &[String], unique_tf: &[f32]) {
-    println!("");
+fn pretty_print_tf_scores(tf_scores: &[(String, f32)], sep: bool) {
+    if sep {
+        print_separator();
+    } else {
+        println!("");
+    }
     println!("TF SCORE:");
 
-    for i in 0..unique_words.len() {
-        let word = &unique_words[i];
-        let tf = unique_tf[i];
+    for (word, tf) in tf_scores.iter() {
         println!("{:14} | {}", word, tf);
     }
 }
@@ -247,5 +280,18 @@ fn pretty_print_idf_scores(unique_words: &[String], idf_scores: &[f32]) {
         let word = &unique_words[i];
         let idf = idf_scores[i];
         println!("{:14} | {}", word, idf);
+    }
+}
+
+fn pretty_print_tf_idf_scores(tf_idf_scores: &[(String, f32)], sep: bool) {
+    if sep {
+        print_separator();
+    } else {
+        println!("");
+    }
+    println!("TF_IDF SCORE:");
+
+    for (word, tf) in tf_idf_scores.iter() {
+        println!("{:14} | {}", word, tf);
     }
 }
