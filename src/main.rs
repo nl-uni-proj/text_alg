@@ -23,7 +23,6 @@ struct TextData {
     theme_idx: usize,
     word_list: Vec<String>,
     vocab: Vocab,
-    unique_tf: Vec<f32>,
 }
 
 struct Vocab {
@@ -35,21 +34,11 @@ struct Vocab {
 impl TextData {
     fn new(theme_idx: usize, word_list: Vec<String>) -> TextData {
         let vocab = Vocab::new_from_words(&word_list);
-        let unique_len = vocab.unique_words.len();
-
-        let mut unique_tf = Vec::with_capacity(unique_len);
-
-        for word in vocab.unique_words.iter() {
-            let freq = vocab.word_freq(&word) as f32;
-            let total = word_list.len() as f32;
-            unique_tf.push(freq / total);
-        }
 
         TextData {
             theme_idx,
             word_list,
             vocab,
-            unique_tf,
         }
     }
 }
@@ -116,7 +105,7 @@ fn main() {
 
     let tf_scores = vocab.get_tf_scores();
     let idf_scores = create_idf_scores(&vocab, &word_text_matrix);
-    let tf_idf_scores = creat_tf_idf_scores(&tf_scores, &idf_scores);
+    let tf_idf_scores = create_tf_idf_scores(&tf_scores, &idf_scores);
 
     pretty_print_tf_scores(&tf_scores, true);
     pretty_print_idf_scores(&vocab.unique_words, &idf_scores);
@@ -179,16 +168,16 @@ fn create_idf_scores(vocab: &Vocab, word_text_matrix: &WordTextMatrix) -> Vec<f3
     idf_scores
 }
 
-fn creat_tf_idf_scores(tf_scores: &[(String, f32)], idf_scores: &[f32]) -> Vec<(String, f32)> {
-    let mut tf_idf = Vec::new();
+fn create_tf_idf_scores(tf_scores: &[(String, f32)], idf_scores: &[f32]) -> Vec<(String, f32)> {
+    let mut tf_idf_scores = Vec::new();
 
     for i in 0..tf_scores.len() {
-        let (word, tf) = tf_scores[i];
+        let (word, tf) = &tf_scores[i];
         let idf = idf_scores[i];
-        tf_idf.push((word.clone(), tf * idf));
+        tf_idf_scores.push((word.clone(), tf * idf));
     }
 
-    tf_idf
+    tf_idf_scores
 }
 
 fn print_separator() {
